@@ -1,0 +1,14 @@
+<view wx:if="{{!hidden}}" class="tabbar safe-bottom" style="background:{{theme.surface}};border-color:{{theme.border}};">
+  <button class="tab-item {{active === 'schedule' ? 'active' : ''}}" data-page="schedule" bindtap="switchPage" style="color:{{active === 'schedule' ? theme.brand : theme.muted}};" aria-label="排班">
+    <view class="calendar-icon"><view class="calendar-line"></view><view class="calendar-dots">···</view></view>
+    <text class="tab-label">排班</text>
+  </button>
+  <button class="tab-item {{active === 'statistics' ? 'active' : ''}}" data-page="statistics" bindtap="switchPage" style="color:{{active === 'statistics' ? theme.brand : theme.muted}};" aria-label="统计">
+    <view class="chart-icon"><view class="bar"></view><view class="bar"></view><view class="bar"></view></view>
+    <text class="tab-label">统计</text>
+  </button>
+  <button class="tab-item {{active === 'settings' ? 'active' : ''}}" data-page="settings" bindtap="switchPage" style="color:{{active === 'settings' ? theme.brand : theme.muted}};" aria-label="设置">
+    <view class="settings-icon">◎</view>
+    <text class="tab-label">设置</text>
+  </button>
+</view>

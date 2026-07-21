@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "privacy-dialog": "/components/privacy-dialog/index"
+  },
+  "enablePullDownRefresh": false,
+  "navigationBarTitleText": "班妥了"
+}

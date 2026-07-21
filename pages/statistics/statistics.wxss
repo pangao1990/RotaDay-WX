@@ -1,0 +1,405 @@
+.stats-body {
+  padding-top: 22rpx;
+}
+
+.period-card {
+  margin-bottom: 26rpx;
+  padding: 28rpx;
+}
+
+.period-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.period-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.period-title {
+  display: block;
+  color: var(--text);
+  font-size: 36rpx;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.period-sync {
+  margin-top: 9rpx;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 21rpx;
+}
+
+.period-sync > view {
+  width: 9rpx;
+  height: 9rpx;
+  flex: none;
+  margin-right: 9rpx;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.period-reset {
+  flex: none;
+  height: 58rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: var(--brand);
+  background: var(--brand-soft);
+  font-size: 21rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.period-row {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.segmented {
+  padding: 7rpx;
+  display: flex;
+  border-radius: 18rpx;
+  background: var(--subtle);
+  box-sizing: border-box;
+}
+
+.segmented button {
+  min-width: 0;
+  flex: 1;
+  min-height: 76rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: var(--muted);
+  font-size: 29rpx;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.segmented button.active {
+  color: var(--on-brand);
+  background: var(--brand);
+}
+
+.period-switch {
+  width: 220rpx;
+  flex: none;
+}
+
+.period-controls {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  gap: 10rpx;
+}
+
+.period-controls button {
+  min-width: 0;
+  flex: 1;
+  height: 76rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  color: var(--text);
+  background: var(--subtle);
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.period-arrow {
+  font-size: 38rpx;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+}
+
+.summary-card {
+  min-height: 180rpx;
+  padding: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summary-label {
+  display: block;
+  color: var(--muted);
+  font-size: 26rpx;
+}
+
+.summary-value-row {
+  margin-top: 14rpx;
+  display: flex;
+  align-items: baseline;
+}
+
+.summary-value {
+  color: var(--text);
+  font-size: 54rpx;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.summary-unit {
+  margin-left: 10rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+}
+
+.summary-icon {
+  width: 62rpx;
+  height: 62rpx;
+  flex: none;
+  margin-left: 10rpx;
+  border-radius: 17rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand);
+  background: var(--brand-soft);
+  font-size: 24rpx;
+  font-weight: 800;
+  box-sizing: border-box;
+}
+
+@media (max-width: 340px) {
+  .period-card {
+    padding: 24rpx;
+  }
+
+  .period-row {
+    gap: 14rpx;
+  }
+
+  .period-switch {
+    width: 200rpx;
+  }
+
+  .period-controls button {
+    gap: 3rpx;
+    font-size: 20rpx;
+  }
+
+  .summary-card {
+    padding: 24rpx;
+  }
+}
+
+.chart-card {
+  padding: 36rpx 32rpx;
+  margin-bottom: 28rpx;
+}
+
+.chart-title {
+  display: block;
+  color: var(--text);
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.chart-copy {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.bar-list {
+  margin-top: 34rpx;
+}
+
+.bar-row {
+  min-height: 68rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.bar-label {
+  width: 78rpx;
+  flex: none;
+  font-size: 25rpx;
+}
+
+.bar-track {
+  min-width: 0;
+  flex: 1;
+  height: 20rpx;
+  overflow: hidden;
+  border-radius: 12rpx;
+  background: var(--subtle);
+}
+
+.bar-fill {
+  height: 100%;
+  min-width: 0;
+  border-radius: 12rpx;
+}
+
+.bar-value {
+  width: 76rpx;
+  flex: none;
+  color: var(--muted);
+  font-size: 24rpx;
+  text-align: right;
+}
+
+.density-grid {
+  margin-top: 28rpx;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10rpx;
+}
+
+.density-day {
+  height: 74rpx;
+  padding: 8rpx 3rpx;
+  border: 2rpx solid var(--border);
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: var(--text);
+}
+
+.density-day > text {
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.density-day .small {
+  margin-top: 4rpx;
+  font-size: 17rpx;
+}
+
+.member-load-list {
+  margin-top: 26rpx;
+}
+
+.member-load-row {
+  min-height: 112rpx;
+  padding: 14rpx 0;
+  display: flex;
+  align-items: center;
+  border-top: 2rpx solid var(--border);
+}
+
+.member-load-row:first-child {
+  border-top: 0;
+}
+
+.member-avatar {
+  width: 68rpx;
+  height: 68rpx;
+  flex: none;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.load-main {
+  min-width: 0;
+  flex: 1;
+  margin-left: 18rpx;
+}
+
+.load-title {
+  margin-bottom: 13rpx;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.load-title > text {
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.load-title .small {
+  color: var(--muted);
+  font-size: 20rpx;
+  text-align: right;
+}
+
+.rhythm-list {
+  margin-top: 26rpx;
+}
+
+.rhythm-row {
+  min-height: 106rpx;
+  padding: 18rpx 0;
+  display: flex;
+  align-items: center;
+  border-top: 2rpx solid var(--border);
+  box-sizing: border-box;
+}
+
+.rhythm-row:first-child {
+  border-top: 0;
+}
+
+.rhythm-month {
+  width: 84rpx;
+  flex: none;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.rhythm-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.rhythm-main > text {
+  display: block;
+  margin-top: 10rpx;
+  color: var(--muted);
+  font-size: 21rpx;
+}
+
+.empty-data-note {
+  margin: 12rpx 0 26rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  color: var(--muted);
+  background: var(--subtle);
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.export-button {
+  width: 100%;
+  margin-top: 8rpx;
+}

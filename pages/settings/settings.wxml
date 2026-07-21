@@ -1,0 +1,239 @@
+<view class="app-page" style="{{themeVars}}">
+  <view class="page-body settings-body">
+    <view class="page-intro">
+      <text class="page-subtitle">调成更适合你工作和休息的样子</text>
+    </view>
+
+    <text class="settings-group-title">偏好</text>
+    <view class="card settings-group">
+      <button class="settings-row" data-panel="mode" bindtap="openPanel">
+        <text class="settings-icon">换</text>
+        <view class="settings-copy"><text>使用模式</text><text class="small">个人排班与团队排班独立保存</text></view>
+        <text class="settings-value">{{appMode === 'team' ? '团队版' : '个人版'}}</text><text class="chevron">›</text>
+      </button>
+      <button class="settings-row" data-panel="theme" bindtap="openPanel">
+        <text class="settings-icon">色</text>
+        <view class="settings-copy"><text>主题外观</text><text class="small">八套清晰、耐看的界面配色</text></view>
+        <text class="settings-value">{{theme.name}}</text><text class="chevron">›</text>
+      </button>
+      <button class="settings-row" data-panel="calendar" bindtap="openPanel">
+        <text class="settings-icon">历</text>
+        <view class="settings-copy"><text>日历显示</text><text class="small">每周开始与时间格式</text></view>
+        <text class="settings-value">{{weekStart === 1 ? '周一开始' : '周日开始'}}</text><text class="chevron">›</text>
+      </button>
+    </view>
+
+    <text class="settings-group-title">内容</text>
+    <view class="card settings-group">
+      <button class="settings-row" data-panel="moment" bindtap="openPanel">
+        <text class="settings-icon">心</text>
+        <view class="settings-copy"><text>打开小程序的片刻</text><text class="small">按班次和作息给自己一点缓冲</text></view>
+        <text class="settings-value">{{momentFrequencyIndex === 3 ? '已关闭' : '已开启'}}</text><text class="chevron">›</text>
+      </button>
+    </view>
+
+    <text class="settings-group-title">排班与数据</text>
+    <view class="card settings-group">
+      <button class="settings-row" data-panel="shifts" bindtap="openPanel">
+        <text class="settings-icon">班</text>
+        <view class="settings-copy"><text>班次与循环</text><text class="small">修改时间、颜色和循环模板</text></view>
+        <text class="settings-value">{{shifts.length}} 个班次</text><text class="chevron">›</text>
+      </button>
+      <button class="settings-row" data-panel="backup" bindtap="openPanel">
+        <text class="settings-icon">存</text>
+        <view class="settings-copy"><text>数据备份</text><text class="small">导出、恢复或重置本机数据</text></view>
+        <text class="chevron">›</text>
+      </button>
+    </view>
+
+    <text class="settings-group-title">支持</text>
+    <view class="card settings-group">
+      <button class="settings-row" open-type="contact" session-from="settings_support" show-message-card="{{true}}" send-message-title="班妥了｜智能倒班排班助手" send-message-path="/pages/index/index">
+        <text class="settings-icon">客</text>
+        <view class="settings-copy"><text>联系客服</text><text class="small">通过微信客服咨询使用问题</text></view>
+        <text class="chevron">›</text>
+      </button>
+      <button class="settings-row" open-type="feedback">
+        <text class="settings-icon">馈</text>
+        <view class="settings-copy"><text>意见反馈</text><text class="small">提交建议、问题截图和运行日志</text></view>
+        <text class="chevron">›</text>
+      </button>
+      <button class="settings-row" data-panel="about" bindtap="openPanel">
+        <text class="settings-icon">关于</text>
+        <view class="settings-copy"><text>关于班妥了</text><text class="small">智能倒班排班助手</text></view>
+        <text class="chevron">›</text>
+      </button>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{panel}}" catchtap="closePanel">
+    <view class="modal-card settings-modal" catchtap="noop">
+      <scroll-view class="modal-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+        <view class="modal-content">
+          <view class="modal-header">
+            <view class="modal-heading"><text class="modal-title">{{panelTitle}}</text><text class="modal-subtitle">所有设置只保存在当前微信设备的本地缓存中</text></view>
+            <button class="close-button" bindtap="closePanel" aria-label="关闭设置弹窗">×</button>
+          </view>
+
+          <view wx:if="{{panel === 'mode'}}">
+            <view class="intro-card"><text>个人版专注自己的循环、换班与统计；团队版用于负责人安排成员和岗位。</text></view>
+            <button class="mode-card {{appMode === 'personal' ? 'selected' : ''}}" data-mode="personal" bindtap="selectMode">
+              <text class="mode-mark">我</text><view><text class="mode-name">个人版</text><text class="small">记录自己的循环班次、临时换班与统计</text></view><text class="mode-check">{{appMode === 'personal' ? '✓' : '›'}}</text>
+            </button>
+            <button class="mode-card {{appMode === 'team' ? 'selected' : ''}}" data-mode="team" bindtap="selectMode">
+              <text class="mode-mark team">队</text><view><text class="mode-name">团队版</text><text class="small">管理成员、岗位和每天的值班安排</text></view><text class="mode-check">{{appMode === 'team' ? '✓' : '›'}}</text>
+            </button>
+          </view>
+
+          <view wx:if="{{panel === 'theme'}}">
+            <view class="intro-card theme-intro"><text>按今天的作息，选一个清亮、舒服、能让心情放松的界面。</text><text class="small">夜班时可以试试“夜航”。</text></view>
+            <text class="section-label">预置主题</text>
+            <view class="theme-grid">
+              <button wx:for="{{themeCards}}" wx:key="key" class="theme-card {{item.selected ? 'selected' : ''}}" data-index="{{item.index}}" style="background:{{item.surface}};border-color:{{item.selected ? item.brand : item.border}}" bindtap="selectTheme">
+                <view class="theme-swatches"><view style="background:{{item.brand}}"></view><view><text style="background:{{item.accent}}"></text><text style="background:{{item.page}};border-color:{{item.border}}"></text></view></view>
+                <view class="theme-card-title"><text style="color:{{item.text}}">{{item.name}}</text><text class="theme-state" style="color:{{item.brand}}">{{item.selected ? '✓ 使用中' : (item.recommended ? '默认推荐' : '')}}</text></view>
+                <text class="theme-description" style="color:{{item.muted}}">{{item.description}}</text>
+              </button>
+            </view>
+
+            <view class="custom-theme-editor" wx:if="{{themeIndex === 7}}">
+              <text class="section-label">自定义颜色</text>
+              <text class="form-label">主题色</text>
+              <input class="form-input" value="{{customBrandInput}}" maxlength="7" bindinput="customBrandInput" />
+              <view class="mini-color-grid">
+                <button wx:for="{{customBrandColors}}" wx:key="*this" data-color="{{item}}" style="background:{{item}}" bindtap="chooseCustomBrand" aria-label="选择主题色 {{item}}"></button>
+              </view>
+              <text class="form-label">页面背景色</text>
+              <input class="form-input" value="{{customPageInput}}" maxlength="7" bindinput="customPageInput" />
+              <view class="mini-color-grid">
+                <button wx:for="{{customPageColors}}" wx:key="*this" data-color="{{item}}" style="background:{{item}};border-color:{{theme.border}}" bindtap="chooseCustomPage" aria-label="选择背景色 {{item}}"></button>
+              </view>
+              <button class="primary-button full-button" bindtap="applyCustomTheme">应用自定义主题</button>
+            </view>
+          </view>
+
+          <view wx:if="{{panel === 'calendar'}}">
+            <text class="section-label first-label">每周开始</text>
+            <view class="segmented">
+              <button class="{{weekStart === 1 ? 'active' : ''}}" data-value="1" bindtap="setWeekStart">周一</button>
+              <button class="{{weekStart === 0 ? 'active' : ''}}" data-value="0" bindtap="setWeekStart">周日</button>
+            </view>
+            <view class="setting-control-row no-border">
+              <view><text>24 小时制</text><text class="small">关闭后以“上午 / 下午”显示时间</text></view>
+              <switch checked="{{time24}}" color="{{theme.brand}}" bindchange="toggleTime24" />
+            </view>
+            <view class="intro-card"><text>更改后，个人与团队月历会立即使用新的每周起始方式。</text></view>
+          </view>
+
+          <view wx:if="{{panel === 'moment'}}">
+            <view class="intro-card"><text>片刻会根据早班、白班、夜班、休息日和距离休息的天数选择内容。</text></view>
+            <text class="section-label">自动出现频率</text>
+            <view class="option-grid two-columns">
+              <button class="option-card {{momentFrequencyIndex === 0 ? 'selected' : ''}}" data-index="0" bindtap="selectMomentFrequency">每天首次</button>
+              <button class="option-card {{momentFrequencyIndex === 1 ? 'selected' : ''}}" data-index="1" bindtap="selectMomentFrequency">关键节点</button>
+              <button class="option-card {{momentFrequencyIndex === 2 ? 'selected' : ''}}" data-index="2" bindtap="selectMomentFrequency">每次打开</button>
+              <button class="option-card {{momentFrequencyIndex === 3 ? 'selected' : ''}}" data-index="3" bindtap="selectMomentFrequency">关闭</button>
+            </view>
+            <text class="section-label">内容倾向</text>
+            <view class="option-grid three-columns">
+              <button class="option-card {{momentToneIndex === 0 ? 'selected' : ''}}" data-index="0" bindtap="selectMomentTone">均衡推荐</button>
+              <button class="option-card {{momentToneIndex === 1 ? 'selected' : ''}}" data-index="1" bindtap="selectMomentTone">精神价值</button>
+              <button class="option-card {{momentToneIndex === 2 ? 'selected' : ''}}" data-index="2" bindtap="selectMomentTone">情绪价值</button>
+            </view>
+          </view>
+
+          <view wx:if="{{panel === 'shifts'}}">
+            <view class="segmented shift-tabs">
+              <button class="{{shiftTab === 'cycle' ? 'active' : ''}}" data-tab="cycle" bindtap="switchShiftTab">循环班表</button>
+              <button class="{{shiftTab === 'shifts' ? 'active' : ''}}" data-tab="shifts" bindtap="switchShiftTab">班次设置</button>
+            </view>
+
+            <view wx:if="{{shiftTab === 'cycle'}}">
+              <view class="setting-control-row"><view><text>启用循环班表</text><text class="small">单日修改仍会优先于循环</text></view><switch checked="{{cycleEnabled}}" color="{{theme.brand}}" bindchange="toggleCycle" /></view>
+              <text class="section-label">循环起始日</text>
+              <picker mode="date" value="{{cycleStartKey}}" bindchange="changeCycleStart"><view class="form-picker">{{cycleStartKey}}</view></picker>
+              <text class="section-label">循环模板</text>
+              <view class="cycle-list">
+                <button wx:for="{{cycleTemplates}}" wx:key="key" class="cycle-card {{item.selected ? 'selected' : ''}}" data-index="{{item.index}}" bindtap="chooseCycleTemplate">
+                  <view class="cycle-copy"><text>{{item.name}}</text><text class="small">{{item.description}}</text></view>
+                  <view class="cycle-preview"><text wx:for="{{item.preview}}" wx:for-item="chip" wx:key="key" style="background:{{chip.color}}">{{chip.name}}</text></view>
+                  <text class="cycle-check">{{item.selected ? '✓' : '›'}}</text>
+                </button>
+              </view>
+            </view>
+
+            <view wx:else>
+              <button class="primary-button full-button add-shift-button" bindtap="openShiftForm">新增自定义班次</button>
+              <view class="shift-list">
+                <button class="shift-row" wx:for="{{shifts}}" wx:key="key" data-shift-key="{{item.key}}" bindtap="openShiftForm">
+                  <text class="shift-dot" style="background:{{item.color}}"></text>
+                  <view><text>{{item.name}}</text><text class="small">{{item.timeText}}</text></view>
+                  <text class="built-in-tag">{{item.builtIn ? '预设' : '自定义'}}</text><text class="chevron">›</text>
+                </button>
+              </view>
+            </view>
+          </view>
+
+          <view wx:if="{{panel === 'backup'}}">
+            <view class="intro-card"><text>备份包含个人排班、团队成员、班次、循环、主题和片刻设置。</text><text class="small">数据默认只保存在微信本机缓存中，无需登录。</text></view>
+            <button class="backup-action" bindtap="exportBackup"><text class="backup-icon">⇩</text><view><text>导出完整备份</text><text class="small">将 JSON 复制到剪贴板</text></view><text class="chevron">›</text></button>
+            <button class="backup-action" bindtap="importBackup"><text class="backup-icon">⇧</text><view><text>从剪贴板恢复</text><text class="small">验证后覆盖当前数据</text></view><text class="chevron">›</text></button>
+            <button class="backup-action danger-backup" bindtap="resetAllData"><text class="backup-icon">↻</text><view><text>重置全部数据</text><text class="small">恢复到首次打开时的状态</text></view><text class="chevron">›</text></button>
+          </view>
+
+          <view wx:if="{{panel === 'about'}}">
+            <view class="about-hero">
+              <image src="/assets/logo.png" mode="aspectFit" />
+              <text class="about-name">班妥了</text>
+              <text class="about-slogan">智能倒班排班助手</text>
+              <text class="about-version">微信小程序版 1.0.0</text>
+            </view>
+            <view class="intro-card"><text>排班不纠结，班妥了就行。</text></view>
+            <view class="about-description">
+              <text>专为护士、安保、工厂、门店、物业等轮班人群打造的轻量化排班工具。自定义早中夜班、周期循环排班，一键生成月度班表。支持个人版和团队版智能排班。极简无冗余设计，倒班、值班、轮休一件事全部办妥。</text>
+            </view>
+            <view class="about-actions">
+              <button class="secondary-button" open-type="feedback">意见反馈</button>
+              <button class="primary-button" open-type="contact" session-from="about_support" show-message-card="{{true}}" send-message-title="班妥了｜智能倒班排班助手" send-message-path="/pages/index/index">联系客服</button>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="modal-mask nested-mask" wx:if="{{showShiftForm}}" catchtap="closeShiftForm">
+    <view class="modal-card" catchtap="noop">
+      <scroll-view class="modal-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+        <view class="modal-content">
+          <view class="modal-header">
+            <view class="modal-heading"><text class="modal-title">{{shiftDraft.creating ? '新增班次' : '编辑班次'}}</text><text class="modal-subtitle">名称最多 8 字，简称最多 2 字</text></view>
+            <button class="close-button" bindtap="closeShiftForm" aria-label="关闭班次编辑弹窗">×</button>
+          </view>
+          <text class="form-label">班次名称</text>
+          <input class="form-input" value="{{shiftDraft.name}}" maxlength="8" bindinput="shiftNameInput" />
+          <text class="form-label">月历简称</text>
+          <input class="form-input" value="{{shiftDraft.shortName}}" maxlength="2" bindinput="shiftShortInput" />
+          <view wx:if="{{shiftDraft.isWork}}">
+            <text class="form-label">开始时间</text>
+            <picker mode="time" value="{{shiftDraft.startTime}}" bindchange="shiftStartChange"><view class="form-picker">{{shiftDraft.startTime}}</view></picker>
+            <text class="form-label">结束时间 {{shiftDraft.endMinutes <= shiftDraft.startMinutes ? '（次日）' : ''}}</text>
+            <picker mode="time" value="{{shiftDraft.endTime}}" bindchange="shiftEndChange"><view class="form-picker">{{shiftDraft.endTime}}</view></picker>
+            <text class="form-label">休息 {{shiftDraft.breakMinutes}} 分钟</text>
+            <slider min="0" max="360" step="15" value="{{shiftDraft.breakMinutes}}" activeColor="{{theme.brand}}" backgroundColor="{{theme.subtle}}" bindchange="shiftBreakChange" />
+          </view>
+          <text class="form-label">班次颜色</text>
+          <view class="shift-color-grid">
+            <button wx:for="{{shiftColorOptions}}" wx:key="*this" class="shift-color-choice {{shiftDraft.color === item ? 'selected' : ''}}" data-color="{{item}}" style="background:{{item}}" bindtap="chooseShiftColor" aria-label="选择班次颜色 {{item}}"><text wx:if="{{shiftDraft.color === item}}">✓</text></button>
+          </view>
+          <button class="soft-button color-more" bindtap="toggleShiftColors">{{showAllShiftColors ? '收起颜色' : '更多颜色'}}</button>
+          <view class="button-row">
+            <button class="danger-button delete-shift" wx:if="{{!shiftDraft.builtIn && !shiftDraft.creating}}" bindtap="deleteShift">删除</button>
+            <button class="primary-button" bindtap="saveShift">保存班次</button>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+  <privacy-dialog theme="{{theme}}" />
+</view>

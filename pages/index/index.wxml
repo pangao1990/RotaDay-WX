@@ -1,0 +1,255 @@
+<view class="app-page" style="{{themeVars}}">
+  <view class="page-body home-body">
+    <button class="greeting-panel" bindtap="openMoment">
+      <view class="greeting-stripe"><view></view><view></view><view></view></view>
+      <view class="greeting-copy">
+        <text class="greeting-date">{{greetingDate}}</text>
+        <text class="greeting-text">{{greeting}}</text>
+      </view>
+      <text class="greeting-open">片刻 ›</text>
+    </button>
+
+    <view class="card today-card" wx:if="{{!isTeam}}">
+      <view class="today-main">
+        <text class="eyebrow">今日班次</text>
+        <view class="shift-name-row"><view style="background:{{todayShift.color}}"></view><text>{{todayShift.name}}</text></view>
+        <text class="shift-time">{{todayShift.timeText}}</text>
+        <text class="today-status">{{todayStatus}}</text>
+      </view>
+      <button class="today-action" bindtap="editToday"><view class="today-action-icon edit-icon"><view class="edit-pencil"></view></view><text>调整</text></button>
+    </view>
+
+    <view class="card today-card" wx:else>
+      <view class="today-main">
+        <text class="eyebrow">今日团队排班</text>
+        <view class="team-count-row"><text class="team-count">{{todayTeamCount}}</text><text class="team-count-unit">人已安排</text></view>
+        <text class="today-status team-preview">{{todayTeamPreview}}</text>
+      </view>
+      <button class="today-action" bindtap="editToday"><view class="today-action-icon add-icon"></view><text>安排</text></button>
+    </view>
+
+    <view class="card calendar-card">
+      <view class="calendar-header">
+        <picker class="month-picker" mode="date" value="{{selectedDateKey}}" bindchange="jumpDate">
+          <view class="month-picker-content">
+            <text class="month-title">{{monthLabel}}</text>
+            <text class="month-picker-hint">选日期</text>
+          </view>
+        </picker>
+        <view class="calendar-tools">
+          <button class="calendar-tool today-tool" bindtap="goToday">今</button>
+          <button class="calendar-tool" data-delta="-1" bindtap="changeMonth" aria-label="上个月">‹</button>
+          <button class="calendar-tool" data-delta="1" bindtap="changeMonth" aria-label="下个月">›</button>
+        </view>
+      </view>
+      <view class="week-row"><text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text></view>
+      <view class="calendar-grid">
+        <button wx:for="{{calendarDays}}" wx:key="dateKey" class="{{item.classes}}" data-date="{{item.dateKey}}" bindtap="selectCalendarDay" bindlongpress="holdCalendarDay">
+          <text class="day-number">{{item.date}}</text>
+          <view class="day-shift-row" wx:if="{{!isTeam}}">
+            <text class="override-dot" wx:if="{{item.isOverride}}">•</text>
+            <text class="day-shift" style="color:{{item.color}}">{{item.shortName}}</text>
+          </view>
+          <text class="day-team-count" wx:else>{{item.shortName}}</text>
+        </button>
+      </view>
+      <text class="calendar-hint">点击选择日期，长按可直接{{isTeam ? '安排成员' : '修改班次'}}</text>
+    </view>
+
+    <view class="card selected-card" wx:if="{{!isTeam}}">
+      <view class="selected-header">
+        <view><text class="eyebrow">已选择</text><text class="selected-date">{{selectedDateTitle}}</text></view>
+        <text class="override-tag" wx:if="{{selectedHasOverride}}">当天覆盖</text>
+      </view>
+      <view class="selected-shift">
+        <view class="selected-shift-dot" style="background:{{selectedShift.color}}"></view>
+        <view class="selected-shift-copy"><text>{{selectedShift.name}}</text><text class="small">{{selectedShift.timeText}}</text></view>
+        <button class="soft-button selected-edit" bindtap="openShiftEditor">修改</button>
+      </view>
+    </view>
+
+    <view class="card selected-card" wx:else>
+      <view class="selected-header">
+        <view><text class="eyebrow">已选择</text><text class="selected-date">{{selectedDateTitle}}</text></view>
+        <button class="soft-button compact-action" bindtap="openTeamManager">管理排班</button>
+      </view>
+      <view class="team-preview-list" wx:if="{{selectedTeamDetails.length}}">
+        <button class="team-preview-member" wx:for="{{selectedTeamDetails}}" wx:key="id" data-member-id="{{item.id}}" bindtap="openTeamShiftEditor">
+          <text class="member-avatar" style="background:{{item.color}}">{{item.initial}}</text>
+          <view class="member-copy"><text>{{item.name}}</text><text class="small">{{item.role}}</text></view>
+          <view class="member-shift"><text>{{item.shiftName}}</text><text class="small">{{item.shiftTime}}</text></view>
+        </button>
+      </view>
+      <view class="empty-state compact-empty" wx:else>当天还没有成员排班，点击“管理排班”开始安排。</view>
+    </view>
+
+    <view class="card rest-strip" wx:if="{{!isTeam}}">
+      <view><text class="eyebrow">下次休息</text><text class="rest-copy">{{nextRestText}}</text></view>
+      <button class="rest-action" bindtap="jumpNextRest">查看 ›</button>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showShiftEditor}}" catchtap="closeShiftEditor">
+    <view class="modal-card" catchtap="noop">
+      <scroll-view class="modal-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+        <view class="modal-content">
+          <view class="modal-header">
+            <view class="modal-heading"><text class="modal-title">修改班次</text><text class="modal-subtitle">{{editorDateTitle}}</text></view>
+            <button class="close-button" bindtap="closeShiftEditor" aria-label="关闭修改班次弹窗">×</button>
+          </view>
+          <view class="picker-intro"><text>选择当天实际班次，只覆盖这一天，不影响循环。</text><button bindtap="openShiftSettings">班次设置 ›</button></view>
+          <view class="shift-picker-grid">
+            <button wx:for="{{shifts}}" wx:key="key" class="shift-option {{editorShiftKey === item.key ? 'selected' : ''}}" data-shift-key="{{item.key}}" bindtap="chooseEditorShift">
+              <view style="background:{{item.color}}"></view>
+              <view><text>{{item.name}}</text><text class="small">{{item.compactTime}}</text></view>
+              <text class="checkmark" wx:if="{{editorShiftKey === item.key}}">✓</text>
+            </button>
+          </view>
+          <view class="button-row">
+            <button class="secondary-button" bindtap="restoreCycle" disabled="{{!editorHasOverride}}">{{editorHasOverride ? '恢复循环' : '当前为循环'}}</button>
+            <button class="primary-button" bindtap="savePersonalShift">保存修改</button>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showTeamManager}}" catchtap="closeTeamManager">
+    <view class="modal-card team-manager-card" catchtap="noop">
+      <scroll-view class="modal-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+        <view class="modal-content">
+          <view class="modal-header">
+            <view class="modal-heading"><text class="modal-title">团队排班</text><text class="modal-subtitle">{{selectedDateTitle}}</text></view>
+            <button class="close-button" bindtap="closeTeamManager" aria-label="关闭团队排班弹窗">×</button>
+          </view>
+          <view class="segmented team-tabs">
+            <button class="{{teamManagerTab === 'scheduled' ? 'active' : ''}}" data-tab="scheduled" bindtap="switchTeamManagerTab">排班列表 {{teamScheduled.length}}</button>
+            <button class="{{teamManagerTab === 'members' ? 'active' : ''}}" data-tab="members" bindtap="switchTeamManagerTab">成员列表 {{teamAvailable.length + teamScheduled.length}}</button>
+          </view>
+
+          <view wx:if="{{teamManagerTab === 'scheduled'}}">
+            <button class="primary-button manager-main-button" data-tab="members" bindtap="switchTeamManagerTab">选择成员</button>
+            <view class="manager-list" wx:if="{{teamScheduled.length}}">
+              <button class="manager-member-row" wx:for="{{teamScheduled}}" wx:key="id" data-member-id="{{item.id}}" bindtap="openTeamShiftEditor">
+                <text class="member-avatar" style="background:{{item.color}}">{{item.initial}}</text>
+                <view class="member-copy"><text>{{item.name}}</text><text class="small">{{item.role}}</text></view>
+                <view class="member-shift"><text>{{item.shiftName}}</text><text class="small">{{item.shiftTime}}</text></view>
+                <text class="row-chevron">›</text>
+              </button>
+            </view>
+            <view class="empty-state" wx:else>这一天还没有排班。点击“选择成员”开始安排。</view>
+            <text class="section-label">复制与重置</text>
+            <view class="clipboard-note">{{clipboardText}}</view>
+            <view class="manager-action-grid">
+              <button class="secondary-button" bindtap="copyTeamDay">复制排班</button>
+              <button class="secondary-button" bindtap="pasteTeamDay">粘贴排班</button>
+              <button class="secondary-button danger-outline" bindtap="resetTeamDay">清空当天</button>
+            </view>
+          </view>
+
+          <view wx:else>
+            <button class="primary-button manager-main-button" bindtap="showAddMember">新增成员</button>
+            <view class="manager-list" wx:if="{{teamAvailable.length}}">
+              <view class="manager-member-row" wx:for="{{teamAvailable}}" wx:key="id">
+                <button class="member-select-area" data-member-id="{{item.id}}" bindtap="openTeamShiftEditor">
+                  <text class="member-avatar" style="background:{{item.color}}">{{item.initial}}</text>
+                  <view class="member-copy"><text>{{item.name}}</text><text class="small">{{item.role}}</text></view>
+                  <text class="select-label">选择 ›</text>
+                </button>
+                <button class="member-edit-button" data-member-id="{{item.id}}" bindtap="showEditMember" aria-label="编辑{{item.name}}资料">
+                  <view class="member-edit-icon edit-icon"><view class="edit-pencil"></view></view>
+                </button>
+              </view>
+            </view>
+            <view class="empty-state" wx:else>所有成员都已安排。仍可新增成员，或回到排班列表调整。</view>
+            <text class="section-label" wx:if="{{teamScheduled.length}}">已排班成员资料</text>
+            <view class="member-profile-links" wx:if="{{teamScheduled.length}}">
+              <button wx:for="{{teamScheduled}}" wx:key="id" data-member-id="{{item.id}}" bindtap="showEditMember"><view style="background:{{item.color}}"></view>{{item.name}} · 编辑资料</button>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="modal-mask nested-mask" wx:if="{{showTeamShiftEditor}}" catchtap="closeTeamShiftEditor">
+    <view class="modal-card" catchtap="noop">
+      <scroll-view class="modal-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+        <view class="modal-content">
+          <view class="modal-header">
+            <view class="modal-heading"><text class="modal-title">安排班次</text><text class="modal-subtitle">{{teamDraftMember.name}} · {{selectedDateTitle}}</text></view>
+            <button class="close-button" bindtap="closeTeamShiftEditor" aria-label="关闭安排班次弹窗">×</button>
+          </view>
+          <view class="picker-intro"><text>选择实际班次，“无安排”会清除当天记录。</text><button bindtap="openShiftSettings">班次设置 ›</button></view>
+          <view class="shift-picker-grid">
+            <button wx:for="{{shifts}}" wx:key="key" class="shift-option {{teamDraftShiftKey === item.key ? 'selected' : ''}}" data-shift-key="{{item.key}}" bindtap="chooseTeamShift">
+              <view style="background:{{item.color}}"></view>
+              <view><text>{{item.name}}</text><text class="small">{{item.compactTime}}</text></view>
+              <text class="checkmark" wx:if="{{teamDraftShiftKey === item.key}}">✓</text>
+            </button>
+          </view>
+          <button class="primary-button full-button" bindtap="saveTeamShift">保存安排</button>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="modal-mask nested-mask" wx:if="{{showMemberEditor}}" catchtap="closeMemberEditor">
+    <view class="modal-card" catchtap="noop">
+      <scroll-view class="modal-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+        <view class="modal-content">
+          <view class="modal-header">
+            <view class="modal-heading"><text class="modal-title">{{memberDraft.creating ? '添加成员' : '编辑成员'}}</text><text class="modal-subtitle">姓名用于识别，岗位用于交接确认</text></view>
+            <button class="close-button" bindtap="closeMemberEditor" aria-label="关闭成员资料弹窗">×</button>
+          </view>
+          <text class="form-label">姓名</text>
+          <input class="form-input" value="{{memberDraft.name}}" maxlength="12" placeholder="输入姓名或称呼" bindinput="memberNameInput" />
+          <text class="form-label">岗位 / 职责</text>
+          <input class="form-input" value="{{memberDraft.role}}" maxlength="16" placeholder="例如：机台 A、值班负责人" bindinput="memberRoleInput" />
+          <text class="form-label">识别颜色</text>
+          <view class="color-grid">
+            <button wx:for="{{memberColorOptions}}" wx:key="*this" class="color-choice {{memberDraft.color === item ? 'selected' : ''}}" data-color="{{item}}" style="background:{{item}}" bindtap="chooseMemberColor" aria-label="选择成员颜色 {{item}}"><text wx:if="{{memberDraft.color === item}}">✓</text></button>
+          </view>
+          <button class="soft-button color-more" bindtap="toggleMemberColors">{{showAllMemberColors ? '收起颜色' : '更多颜色'}}</button>
+          <view class="button-row">
+            <button class="danger-button delete-member" wx:if="{{!memberDraft.creating && !memberDraft.isSelf}}" bindtap="deleteMember">删除</button>
+            <button class="primary-button" bindtap="saveMember">保存成员</button>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="modal-mask moment-mask" wx:if="{{showMoment}}" catchtap="closeMoment">
+    <view class="modal-card moment-card" catchtap="noop">
+      <scroll-view class="modal-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+        <view class="moment-poster">
+          <image class="moment-image" src="{{moment.image}}" mode="aspectFill" aria-label="{{moment.alt}}" />
+          <button class="moment-close" bindtap="closeMoment" aria-label="关闭片刻弹窗">×</button>
+          <view class="moment-copy-area">
+            <text class="moment-kicker">{{moment.kicker}}</text>
+            <text class="moment-title">{{moment.title}}</text>
+            <text class="moment-copy">{{moment.copy}}</text>
+            <view class="moment-brand"><text>班妥了</text><text class="small">排班不纠结，班妥了就行</text></view>
+          </view>
+        </view>
+        <view class="moment-actions">
+          <button class="moment-icon-button" bindtap="saveMomentPoster" aria-label="保存片刻海报">
+            <view class="moment-action-icon download-icon"><view></view></view>
+          </button>
+          <button class="moment-icon-button" open-type="share" aria-label="分享片刻">
+            <view class="moment-action-icon share-icon"><view></view></view>
+          </button>
+          <text>{{moment.tone}}</text>
+        </view>
+        <view class="button-row moment-bottom-buttons">
+          <button class="secondary-button" bindtap="refreshMoment">换一句</button>
+          <button class="primary-button" bindtap="closeMoment">收下这句话</button>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <canvas type="2d" id="momentPosterCanvas" class="poster-canvas"></canvas>
+  <privacy-dialog theme="{{theme}}" />
+</view>

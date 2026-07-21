@@ -1,0 +1,19 @@
+<view
+  class="privacy-mask"
+  wx:if="{{visible}}"
+  style="--privacy-surface:{{theme.surface || '#FFFFFF'}};--privacy-subtle:{{theme.subtle || '#EAF4FF'}};--privacy-text:{{theme.text || '#172638'}};--privacy-muted:{{theme.muted || '#52677C'}};--privacy-border:{{theme.border || '#D5E5F4'}};--privacy-brand:{{theme.brand || '#2F73C9'}};--privacy-on-brand:{{theme.onBrand || '#FFFFFF'}};"
+>
+  <view class="privacy-card" catchtap="noop">
+    <scroll-view class="privacy-scroll" scroll-y="{{true}}" enhanced="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+      <view class="privacy-content">
+        <text class="privacy-title">隐私保护提示</text>
+        <text class="privacy-copy">当你主动恢复备份或保存片刻海报时，班妥了会使用剪贴板读取或相册写入能力。数据仅在当前设备处理，不会上传到服务器。</text>
+        <button class="privacy-contract" bindtap="openPrivacyContract">查看{{privacyContractName}} ›</button>
+        <view class="privacy-actions">
+          <button class="privacy-cancel" bindtap="declinePrivacyAuthorization">暂不使用</button>
+          <button id="agree-btn" class="privacy-agree" open-type="agreePrivacyAuthorization" bindagreeprivacyauthorization="handleAgreePrivacyAuthorization">同意并继续</button>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

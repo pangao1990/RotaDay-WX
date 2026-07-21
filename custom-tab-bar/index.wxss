@@ -1,0 +1,87 @@
+.tabbar {
+  position: fixed;
+  z-index: 50;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 112rpx;
+  display: flex;
+  box-sizing: border-box;
+  border-top: 2rpx solid #D5E5F4;
+  background: #FFFFFF;
+}
+
+.tab-item {
+  flex: 1;
+  min-height: 112rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7rpx;
+  color: #52677C;
+  font-size: 22rpx;
+}
+
+.tab-item.active {
+  color: #2F73C9;
+}
+
+.tab-label {
+  line-height: 1;
+}
+
+.calendar-icon {
+  width: 39rpx;
+  height: 36rpx;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 4rpx solid currentColor;
+  border-radius: 8rpx;
+}
+
+.calendar-line {
+  height: 6rpx;
+  border-bottom: 3rpx solid currentColor;
+}
+
+.calendar-dots {
+  margin-top: -2rpx;
+  font-size: 26rpx;
+  line-height: 18rpx;
+  letter-spacing: -1rpx;
+  text-align: center;
+}
+
+.chart-icon {
+  width: 42rpx;
+  height: 38rpx;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5rpx;
+}
+
+.chart-icon .bar {
+  display: block;
+  width: 8rpx;
+  border-radius: 4rpx 4rpx 0 0;
+  background: currentColor;
+}
+
+.chart-icon .bar:nth-child(1) { height: 18rpx; }
+.chart-icon .bar:nth-child(2) { height: 34rpx; }
+.chart-icon .bar:nth-child(3) { height: 25rpx; }
+
+.settings-icon {
+  width: 42rpx;
+  height: 38rpx;
+  font-size: 45rpx;
+  line-height: 34rpx;
+  text-align: center;
+  font-weight: 700;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

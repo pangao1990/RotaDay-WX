@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/statistics/statistics",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "navigationStyle": "default",
+    "navigationBarTitleText": "班妥了",
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#F7FBFF",
+    "backgroundTextStyle": "dark",
+    "backgroundColor": "#F7FBFF"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#52677C",
+    "selectedColor": "#2F73C9",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "排班"
+      },
+      {
+        "pagePath": "pages/statistics/statistics",
+        "text": "统计"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "设置"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

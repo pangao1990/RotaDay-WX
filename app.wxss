@@ -1,0 +1,258 @@
+page {
+  min-height: 100%;
+  background: #F7FBFF;
+  color: #172638;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  line-height: 1.2;
+  background: transparent;
+  color: inherit;
+}
+
+button::after {
+  border: 0;
+}
+
+.app-page {
+  --page: #F7FBFF;
+  --surface: #FFFFFF;
+  --subtle: #EAF4FF;
+  --text: #172638;
+  --muted: #52677C;
+  --faint: #7B8C9C;
+  --border: #D5E5F4;
+  --brand: #2F73C9;
+  --brand-soft: #DDEBFA;
+  --on-brand: #FFFFFF;
+  --accent: #32A89A;
+  --warm: #F0B44C;
+  --overlay: rgba(23, 38, 56, .48);
+  --shadow: rgba(37, 78, 112, .06);
+  min-height: 100vh;
+  box-sizing: border-box;
+  color: var(--text);
+  background: var(--page);
+}
+
+.page-body {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 28rpx 32rpx 200rpx;
+  box-sizing: border-box;
+}
+
+.page-intro {
+  margin: 4rpx 0 26rpx;
+}
+
+.page-subtitle {
+  display: block;
+  color: var(--muted);
+  font-size: 27rpx;
+  line-height: 1.5;
+}
+
+.card {
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 2rpx solid var(--border);
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 28rpx var(--shadow);
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  min-height: 92rpx;
+  padding: 0 28rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.primary-button {
+  color: var(--on-brand);
+  background: var(--brand);
+}
+
+.secondary-button {
+  color: var(--text);
+  background: var(--surface);
+  border: 2rpx solid var(--border);
+}
+
+.soft-button {
+  min-height: 76rpx;
+  padding: 0 22rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: var(--brand);
+  background: var(--brand-soft);
+  font-size: 25rpx;
+  font-weight: 600;
+}
+
+.danger-button {
+  color: #FFFFFF;
+  background: #B04E43;
+}
+
+.modal-mask {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: var(--overlay);
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 760rpx;
+  max-height: calc(100vh - 96rpx - env(safe-area-inset-bottom));
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 2rpx solid var(--border);
+  border-radius: 24rpx;
+  box-sizing: border-box;
+  box-shadow: 0 24rpx 72rpx rgba(23, 38, 56, .16);
+}
+
+.modal-scroll {
+  width: 100%;
+  min-height: 0;
+  max-height: calc(100vh - 96rpx - env(safe-area-inset-bottom));
+  flex: 1 1 auto;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  padding: 30rpx 30rpx 46rpx;
+  box-sizing: border-box;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  margin-bottom: 28rpx;
+}
+
+.modal-heading {
+  min-width: 0;
+  flex: 1;
+}
+
+.modal-title {
+  display: block;
+  color: var(--text);
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.modal-subtitle {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.45;
+}
+
+.close-button {
+  flex: none;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 16rpx;
+  color: var(--text);
+  background: var(--subtle);
+  font-size: 48rpx;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-label {
+  display: block;
+  margin: 22rpx 0 10rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+}
+
+.form-input,
+.form-picker {
+  width: 100%;
+  min-height: 88rpx;
+  padding: 0 24rpx;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border-radius: 16rpx;
+  color: var(--text);
+  background: var(--subtle);
+  font-size: 28rpx;
+}
+
+.button-row {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 30rpx;
+}
+
+.button-row > button,
+.button-row > view,
+.button-row > picker {
+  flex: 1;
+}
+
+.section-label {
+  display: block;
+  margin: 30rpx 0 14rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.empty-state {
+  padding: 50rpx 28rpx;
+  text-align: center;
+  color: var(--muted);
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.toast-note {
+  padding: 22rpx 24rpx;
+  border-radius: 16rpx;
+  color: var(--muted);
+  background: var(--subtle);
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

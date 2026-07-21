@@ -1,0 +1,95 @@
+<view class="app-page" style="{{themeVars}}">
+  <view class="page-body stats-body">
+    <view class="card period-card">
+      <view class="period-heading">
+        <view class="period-copy">
+          <text class="period-title">{{periodLabel}}</text>
+          <view class="period-sync"><view></view><text>数据随班表实时更新</text></view>
+        </view>
+        <button class="period-reset" wx:if="{{showPeriodReset}}" bindtap="goCurrent">回{{period === 'month' ? '本月' : '今年'}}</button>
+      </view>
+      <view class="period-row">
+        <view class="segmented period-switch">
+          <button class="{{period === 'month' ? 'active' : ''}}" data-period="month" bindtap="switchPeriod">月</button>
+          <button class="{{period === 'year' ? 'active' : ''}}" data-period="year" bindtap="switchPeriod">年</button>
+        </view>
+        <view class="period-controls">
+          <button data-delta="-1" bindtap="changePeriod"><text class="period-arrow">‹</text><text>{{period === 'month' ? '上月' : '上年'}}</text></button>
+          <button data-delta="1" bindtap="changePeriod"><text>{{period === 'month' ? '下月' : '下年'}}</text><text class="period-arrow">›</text></button>
+        </view>
+      </view>
+    </view>
+
+    <view class="summary-grid">
+      <view class="card summary-card" wx:for="{{summaryCards}}" wx:key="label">
+        <view><text class="summary-label">{{item.label}}</text><view class="summary-value-row"><text class="summary-value">{{item.value}}</text><text class="summary-unit">{{item.unit}}</text></view></view>
+        <text class="summary-icon">{{item.icon}}</text>
+      </view>
+    </view>
+
+    <view class="card chart-card" wx:if="{{!isTeam && period === 'month'}}">
+      <text class="chart-title">班次分布</text>
+      <text class="chart-copy">看清工作密度，也看见真正属于自己的休息时间</text>
+      <view class="bar-list">
+        <view class="bar-row" wx:for="{{distribution}}" wx:key="key">
+          <text class="bar-label">{{item.name}}</text>
+          <view class="bar-track"><view class="bar-fill" style="width:{{item.width}};background:{{item.color}}"></view></view>
+          <text class="bar-value">{{item.count}} 天</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{isTeam && period === 'month'}}">
+      <view class="card chart-card density-card">
+        <text class="chart-title">每日排班密度</text>
+        <text class="chart-copy">颜色越深，代表当天已安排的人数越多</text>
+        <view class="density-grid">
+          <view class="density-day" wx:for="{{dailyDensity}}" wx:key="day" style="background:{{item.background}}">
+            <text>{{item.day}}</text><text class="small">{{item.count ? item.count + '人' : '—'}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="card chart-card member-load-card">
+        <text class="chart-title">成员负荷</text>
+        <text class="chart-copy">工作班次、夜班与总工时按成员汇总</text>
+        <view class="member-load-list">
+          <view class="member-load-row" wx:for="{{memberLoad}}" wx:key="id">
+            <text class="member-avatar" style="background:{{item.color}}">{{item.initial}}</text>
+            <view class="load-main">
+              <view class="load-title"><text>{{item.name}}</text><text class="small">{{item.workDays}} 班 · {{item.nightDays}} 夜 · {{item.hours}} 小时</text></view>
+              <view class="bar-track"><view class="bar-fill" style="width:{{item.width}};background:{{item.color}}"></view></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card chart-card" wx:if="{{period === 'year'}}">
+      <text class="chart-title">这一年的节奏</text>
+      <text class="chart-copy">按月回看工作量和工时，不用靠记忆拼凑这一年</text>
+      <view class="rhythm-list">
+        <view class="rhythm-row" wx:for="{{monthRhythm}}" wx:key="month">
+          <text class="rhythm-month">{{item.month}}</text>
+          <view class="rhythm-main"><view class="bar-track"><view class="bar-fill" style="width:{{item.width}};background:{{theme.brand}}"></view></view><text>{{item.detail}}</text></view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card chart-card member-load-card" wx:if="{{isTeam && period === 'year'}}">
+      <text class="chart-title">年度成员负荷</text>
+      <text class="chart-copy">用于看见分配差异，不把数字当作绩效评价</text>
+      <view class="member-load-list">
+        <view class="member-load-row" wx:for="{{memberLoad}}" wx:key="id">
+          <text class="member-avatar" style="background:{{item.color}}">{{item.initial}}</text>
+          <view class="load-main">
+            <view class="load-title"><text>{{item.name}}</text><text class="small">{{item.workDays}} 班 · {{item.nightDays}} 夜 · {{item.hours}} 小时</text></view>
+            <view class="bar-track"><view class="bar-fill" style="width:{{item.width}};background:{{item.color}}"></view></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-data-note" wx:if="{{emptyData}}">当前周期还没有有效排班数据。回到排班页安排后，统计会立即更新。</view>
+    <button class="primary-button export-button" wx:if="{{isTeam}}" bindtap="exportTeamCsv">导出团队统计 CSV</button>
+  </view>
+</view>

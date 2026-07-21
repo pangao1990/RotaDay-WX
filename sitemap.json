@@ -1,0 +1,8 @@
+{
+  "desc": "班妥了页面索引规则",
+  "rules": [
+    { "action": "allow", "page": "pages/index/index" },
+    { "action": "disallow", "page": "pages/statistics/statistics" },
+    { "action": "disallow", "page": "pages/settings/settings" }
+  ]
+}
