@@ -53,7 +53,7 @@ function createDefaultState() {
     weekStart: 1,
     time24: true,
     assignments: {},
-    cycleEnabled: true,
+    cycleEnabled: false,
     cycleTemplateIndex: 0,
     cycleStartKey: firstDayKey(),
     shifts: clone(DEFAULT_SHIFTS),

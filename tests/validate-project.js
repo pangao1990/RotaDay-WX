@@ -136,6 +136,9 @@ if (momentModule) {
   if (new Set(teamScenes.map((scene) => scene.posterImage)).size !== 1) fail('团队片刻应复用轻量图片，避免为文案多样性增加包体');
 }
 
+const defaultState = require(path.join(root, 'utils/defaults')).createDefaultState();
+if (defaultState.cycleEnabled !== false) fail('个人版首次使用必须保持空班表，不得默认生成循环排班统计');
+
 files.filter((file) => file.endsWith('.json')).forEach((file) => {
   const config = JSON.parse(fs.readFileSync(file, 'utf8'));
   Object.values(config.usingComponents || {}).forEach((componentPath) => {

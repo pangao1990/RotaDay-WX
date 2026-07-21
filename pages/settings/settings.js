@@ -57,7 +57,7 @@ Page({
     momentFrequencyIndex: 0,
     momentToneIndex: 0,
     shiftTab: 'cycle',
-    cycleEnabled: true,
+    cycleEnabled: false,
     cycleStartKey: '',
     cycleTemplates: [],
     shifts: [],

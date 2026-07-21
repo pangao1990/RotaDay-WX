@@ -57,6 +57,7 @@ test('跨午夜工时会落到次日并扣除休息', () => {
 
 test('循环模板支持负日期偏移和单日覆盖', () => {
   const state = defaults.createDefaultState();
+  state.cycleEnabled = true;
   state.cycleStartKey = '2026-07-01';
   assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-01'), 'day');
   assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-03'), 'night');
@@ -74,8 +75,20 @@ test('月历始终生成六行并包含相邻月份', () => {
   assert.strictEqual(new Set(days.map((day) => day.dateKey)).size, 42);
 });
 
+test('个人版首次使用没有排班时统计保持为空', () => {
+  const state = defaults.createDefaultState();
+  assert.strictEqual(state.cycleEnabled, false);
+  const stats = schedule.calculateMonthStatistics(state, 2026, 6);
+  const counts = schedule.calculateMonthShiftCounts(state, 2026, 6);
+  assert.strictEqual(stats.workDays, 0);
+  assert.strictEqual(stats.restDays, 0);
+  assert.strictEqual(stats.totalMinutes, 0);
+  assert.strictEqual(counts.reduce((sum, item) => sum + item.count, 0), 0);
+});
+
 test('个人月度统计与班次分布保持一致', () => {
   const state = defaults.createDefaultState();
+  state.cycleEnabled = true;
   state.cycleStartKey = '2026-07-01';
   const stats = schedule.calculateMonthStatistics(state, 2026, 6);
   const counts = schedule.calculateMonthShiftCounts(state, 2026, 6);

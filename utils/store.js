@@ -152,7 +152,7 @@ function normalizeState(raw) {
   state.cycleTemplateIndex = Math.round(boundedNumber(source.cycleTemplateIndex, defaults.cycleTemplateIndex, 0, CYCLE_TEMPLATES.length - 1));
   state.weekStart = Number(source.weekStart) === 0 ? 0 : 1;
   state.time24 = source.time24 !== false;
-  state.cycleEnabled = source.cycleEnabled !== false;
+  state.cycleEnabled = source.cycleEnabled === undefined ? defaults.cycleEnabled : source.cycleEnabled === true;
   state.cycleStartKey = isValidDateKey(source.cycleStartKey) ? source.cycleStartKey : defaults.cycleStartKey;
   state.momentFrequencyIndex = Math.round(boundedNumber(source.momentFrequencyIndex, defaults.momentFrequencyIndex, 0, 3));
   state.momentToneIndex = Math.round(boundedNumber(source.momentToneIndex, defaults.momentToneIndex, 0, 2));
