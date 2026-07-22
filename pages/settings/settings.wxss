@@ -329,6 +329,14 @@
   line-height: 1.45;
 }
 
+.form-hint {
+  display: block;
+  margin-top: 10rpx;
+  color: var(--faint);
+  font-size: 21rpx;
+  line-height: 1.5;
+}
+
 .no-border {
   border-bottom: 0;
 }

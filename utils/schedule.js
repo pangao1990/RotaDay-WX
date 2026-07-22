@@ -59,15 +59,148 @@ function getShift(state, key) {
   return shiftFromLookup(buildShiftLookup(state), key);
 }
 
-function getCycleShiftKey(state, dateKey) {
-  const template = CYCLE_TEMPLATES[positiveModulo(Number(state.cycleTemplateIndex) || 0, CYCLE_TEMPLATES.length)];
-  const offset = dateUtils.daysBetween(state.cycleStartKey, dateKey);
+function cycleTemplateIndex(value) {
+  return positiveModulo(Number(value) || 0, CYCLE_TEMPLATES.length);
+}
+
+function cyclePeriodForDate(state, dateKey) {
+  const periods = Array.isArray(state.cyclePeriods) ? state.cyclePeriods : [];
+  let hasActivePeriod = false;
+  for (let index = periods.length - 1; index >= 0; index -= 1) {
+    const period = periods[index];
+    if (period && !period.endKey) hasActivePeriod = true;
+    if (!period || !dateUtils.isValidDateKey(period.startKey) || dateKey < period.startKey) continue;
+    if (period.endKey && dateKey > period.endKey) continue;
+    return period;
+  }
+  if (state.cycleEnabled && !hasActivePeriod && dateUtils.isValidDateKey(state.cycleStartKey) && dateKey >= state.cycleStartKey) {
+    return {
+      startKey: state.cycleStartKey,
+      endKey: '',
+      anchorKey: state.cycleStartKey,
+      templateIndex: cycleTemplateIndex(state.cycleTemplateIndex)
+    };
+  }
+  return null;
+}
+
+function cycleShiftKeyForPeriod(period, dateKey) {
+  if (!period) return 'none';
+  const template = CYCLE_TEMPLATES[cycleTemplateIndex(period.templateIndex)];
+  const anchorKey = dateUtils.isValidDateKey(period.anchorKey) ? period.anchorKey : period.startKey;
+  const offset = dateUtils.daysBetween(anchorKey, dateKey);
+  if (offset < 0) return 'none';
   return template.sequence[positiveModulo(offset, template.sequence.length)];
+}
+
+function getCycleShiftKey(state, dateKey) {
+  return cycleShiftKeyForPeriod(cyclePeriodForDate(state, dateKey), dateKey);
 }
 
 function getPersonalShiftKey(state, dateKey) {
   if (state.assignments && Object.prototype.hasOwnProperty.call(state.assignments, dateKey)) return state.assignments[dateKey];
-  return state.cycleEnabled ? getCycleShiftKey(state, dateKey) : 'none';
+  return getCycleShiftKey(state, dateKey);
+}
+
+function activeCyclePeriodIndex(state) {
+  const periods = Array.isArray(state.cyclePeriods) ? state.cyclePeriods : [];
+  for (let index = periods.length - 1; index >= 0; index -= 1) {
+    if (periods[index] && !periods[index].endKey) return index;
+  }
+  return -1;
+}
+
+function ensureCyclePeriods(state) {
+  if (!Array.isArray(state.cyclePeriods)) state.cyclePeriods = [];
+  return state.cyclePeriods;
+}
+
+function effectiveDateKey(value) {
+  return dateUtils.isValidDateKey(value) ? value : dateUtils.todayKey();
+}
+
+function enableCycle(state, dateKey = dateUtils.todayKey()) {
+  const effectiveKey = effectiveDateKey(dateKey);
+  const periods = ensureCyclePeriods(state);
+  const existingIndex = activeCyclePeriodIndex(state);
+  if (existingIndex >= 0) periods[existingIndex].endKey = effectiveKey;
+  state.cycleEnabled = true;
+  state.cycleStartKey = effectiveKey;
+  periods.push({
+    startKey: effectiveKey,
+    endKey: '',
+    anchorKey: effectiveKey,
+    templateIndex: cycleTemplateIndex(state.cycleTemplateIndex)
+  });
+  return state;
+}
+
+function disableCycle(state, dateKey = dateUtils.todayKey()) {
+  const effectiveKey = effectiveDateKey(dateKey);
+  const periods = ensureCyclePeriods(state);
+  let activeIndex = activeCyclePeriodIndex(state);
+  if (activeIndex < 0 && state.cycleEnabled && dateUtils.isValidDateKey(state.cycleStartKey)) {
+    periods.push({
+      startKey: state.cycleStartKey,
+      endKey: '',
+      anchorKey: state.cycleStartKey,
+      templateIndex: cycleTemplateIndex(state.cycleTemplateIndex)
+    });
+    activeIndex = periods.length - 1;
+  }
+  if (activeIndex >= 0) {
+    if (periods[activeIndex].startKey > effectiveKey) periods.splice(activeIndex, 1);
+    else periods[activeIndex].endKey = effectiveKey;
+  }
+  state.cycleEnabled = false;
+  return state;
+}
+
+function reviseActiveCycle(state, changes, dateKey = dateUtils.todayKey()) {
+  const effectiveKey = effectiveDateKey(dateKey);
+  const nextAnchorKey = dateUtils.isValidDateKey(changes.anchorKey) ? changes.anchorKey : state.cycleStartKey;
+  const nextTemplateIndex = cycleTemplateIndex(
+    changes.templateIndex === undefined ? state.cycleTemplateIndex : changes.templateIndex
+  );
+  state.cycleStartKey = nextAnchorKey;
+  state.cycleTemplateIndex = nextTemplateIndex;
+  if (!state.cycleEnabled) return state;
+
+  const periods = ensureCyclePeriods(state);
+  let activeIndex = activeCyclePeriodIndex(state);
+  if (activeIndex < 0) {
+    periods.push({
+      startKey: effectiveKey,
+      endKey: '',
+      anchorKey: nextAnchorKey,
+      templateIndex: nextTemplateIndex
+    });
+    return state;
+  }
+
+  const active = periods[activeIndex];
+  if (active.startKey < effectiveKey) {
+    active.endKey = dateUtils.addDays(effectiveKey, -1);
+    periods.push({
+      startKey: effectiveKey,
+      endKey: '',
+      anchorKey: nextAnchorKey,
+      templateIndex: nextTemplateIndex
+    });
+  } else {
+    active.startKey = effectiveKey;
+    active.anchorKey = nextAnchorKey;
+    active.templateIndex = nextTemplateIndex;
+  }
+  return state;
+}
+
+function changeCycleTemplate(state, templateIndex, dateKey = dateUtils.todayKey()) {
+  return reviseActiveCycle(state, { templateIndex }, dateKey);
+}
+
+function changeCycleStart(state, anchorKey, dateKey = dateUtils.todayKey()) {
+  return reviseActiveCycle(state, { anchorKey }, dateKey);
 }
 
 function teamAssignmentKey(dateKey, memberId) {
@@ -153,22 +286,28 @@ function addPersonalShift(stats, shift) {
   else if (shift.key === 'evening') stats.eveningDays += 1;
 }
 
-function calculateMonthStatistics(state, year, month) {
+function monthDayLimit(year, month, now = new Date()) {
+  if (year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth())) return 0;
+  if (year === now.getFullYear() && month === now.getMonth()) return now.getDate();
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function calculateMonthStatistics(state, year, month, now = new Date()) {
   const stats = emptyStats();
   const lookup = buildShiftLookup(state);
-  const dayCount = new Date(year, month + 1, 0).getDate();
+  const dayCount = monthDayLimit(year, month, now);
   for (let day = 1; day <= dayCount; day += 1) {
     addPersonalShift(stats, shiftFromLookup(lookup, getPersonalShiftKey(state, dateUtils.formatDateKey(year, month, day))));
   }
   return stats;
 }
 
-function calculateMonthShiftCounts(state, year, month) {
+function calculateMonthShiftCounts(state, year, month, now = new Date()) {
   const lookup = buildShiftLookup(state);
   const counts = lookup.shifts.filter((shift) => shift.key !== 'none').map((shift) => ({ shift, count: 0 }));
   const countByKey = {};
   counts.forEach((item) => { countByKey[item.shift.key] = item; });
-  const dayCount = new Date(year, month + 1, 0).getDate();
+  const dayCount = monthDayLimit(year, month, now);
   for (let day = 1; day <= dayCount; day += 1) {
     const key = getPersonalShiftKey(state, dateUtils.formatDateKey(year, month, day));
     const item = countByKey[key];
@@ -177,8 +316,7 @@ function calculateMonthShiftCounts(state, year, month) {
   return counts;
 }
 
-function calculateYearStatistics(state, year) {
-  const now = new Date();
+function calculateYearStatistics(state, year, now = new Date()) {
   const lookup = buildShiftLookup(state);
   const result = Object.assign(emptyStats(), { year, longestWorkStreak: 0, months: [] });
   let currentStreak = 0;
@@ -201,18 +339,19 @@ function calculateYearStatistics(state, year) {
   return result;
 }
 
-function calculateTeamMonthStatistics(state, year, month) {
+function calculateTeamMonthStatistics(state, year, month, now = new Date()) {
   const members = (state.teamMembers || []).map((member) => ({ member, workDays: 0, restDays: 0, nightDays: 0, totalMinutes: 0 }));
   const memberMap = {};
   members.forEach((item) => { memberMap[item.member.id] = item; });
   const lookup = buildShiftLookup(state);
   const result = { memberCount: members.length, assignmentCount: 0, workAssignments: 0, nightAssignments: 0, totalMinutes: 0, members, dailyCounts: {} };
   const prefix = `${year}-${dateUtils.pad(month + 1)}-`;
+  const dayLimit = monthDayLimit(year, month, now);
   Object.keys(state.teamAssignments || {}).forEach((key) => {
     const split = key.indexOf('|');
     const dateKey = key.slice(0, split);
     const memberId = key.slice(split + 1);
-    if (!dateKey.startsWith(prefix)) return;
+    if (!dateKey.startsWith(prefix) || Number(dateKey.slice(8, 10)) > dayLimit) return;
     const memberStats = memberMap[memberId];
     if (!memberStats) return;
     const shift = shiftFromLookup(lookup, state.teamAssignments[key]);
@@ -233,14 +372,14 @@ function calculateTeamMonthStatistics(state, year, month) {
   return result;
 }
 
-function calculateTeamYearStatistics(state, year) {
+function calculateTeamYearStatistics(state, year, now = new Date()) {
   const result = { year, memberCount: (state.teamMembers || []).length, assignmentCount: 0, workAssignments: 0, nightAssignments: 0, totalMinutes: 0, months: [], members: [] };
   const memberMap = {};
   (state.teamMembers || []).forEach((member) => {
     memberMap[member.id] = { member, workDays: 0, restDays: 0, nightDays: 0, totalMinutes: 0 };
   });
   for (let month = 0; month < 12; month += 1) {
-    const stats = calculateTeamMonthStatistics(state, year, month);
+    const stats = calculateTeamMonthStatistics(state, year, month, now);
     result.months.push({ month, assignmentCount: stats.assignmentCount, workAssignments: stats.workAssignments, nightAssignments: stats.nightAssignments, totalMinutes: stats.totalMinutes });
     result.assignmentCount += stats.assignmentCount;
     result.workAssignments += stats.workAssignments;
@@ -276,13 +415,19 @@ module.exports = {
   decorateShift,
   normalizedShifts,
   getShift,
+  cyclePeriodForDate,
   getCycleShiftKey,
   getPersonalShiftKey,
+  enableCycle,
+  disableCycle,
+  changeCycleTemplate,
+  changeCycleStart,
   teamAssignmentKey,
   getTeamShiftKey,
   teamDetailsForDate,
   teamCountForDate,
   buildCalendar,
+  monthDayLimit,
   calculateMonthStatistics,
   calculateMonthShiftCounts,
   calculateYearStatistics,

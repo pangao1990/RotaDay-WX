@@ -1,5 +1,5 @@
 const { createDefaultState, clone, DEFAULT_SHIFTS, THEMES, CYCLE_TEMPLATES } = require('./defaults');
-const { isValidDateKey } = require('./date');
+const { isValidDateKey, addDays, todayKey } = require('./date');
 const logger = require('./logger');
 
 const STORAGE_KEY = 'rotaday_wechat_state_v1';
@@ -7,6 +7,7 @@ const MAX_SHIFTS = 32;
 const MAX_MEMBERS = 80;
 const MAX_PERSONAL_ASSIGNMENTS = 5000;
 const MAX_TEAM_ASSIGNMENTS = 20000;
+const MAX_CYCLE_PERIODS = 5000;
 const MAX_BACKUP_LENGTH = 2 * 1024 * 1024;
 const PERSONAL_MOMENT_SCENES = ['morning', 'day', 'night', 'rest', 'twoDays', 'afterNight', 'tired'];
 const MOMENT_HISTORY_KEYS = PERSONAL_MOMENT_SCENES.concat(PERSONAL_MOMENT_SCENES.map((scene) => `team:${scene}`));
@@ -141,6 +142,51 @@ function normalizeTeamClipboard(source, memberIds, shiftKeys) {
   return { sourceDateKey: value.sourceDateKey, assignments };
 }
 
+function normalizeCyclePeriods(source, cycleEnabled, cycleStartKey, cycleTemplateIndex) {
+  const values = Array.isArray(source) ? source.slice(-MAX_CYCLE_PERIODS) : [];
+  const periods = [];
+  values.forEach((value) => {
+    if (!value || typeof value !== 'object' || !isValidDateKey(value.startKey)) return;
+    const endKey = value.endKey === '' || value.endKey === undefined || value.endKey === null ? '' : value.endKey;
+    if (endKey && (!isValidDateKey(endKey) || endKey < value.startKey)) return;
+    periods.push({
+      startKey: value.startKey,
+      endKey,
+      anchorKey: isValidDateKey(value.anchorKey) ? value.anchorKey : value.startKey,
+      templateIndex: Math.round(boundedNumber(value.templateIndex, 0, 0, CYCLE_TEMPLATES.length - 1))
+    });
+  });
+
+  // Only the newest period may remain active. Malformed or legacy overlapping
+  // periods are closed before the following period and remain read-only history.
+  for (let index = 0; index < periods.length - 1; index += 1) {
+    if (periods[index].endKey) continue;
+    const nextStart = periods[index + 1].startKey;
+    periods[index].endKey = nextStart > periods[index].startKey ? addDays(nextStart, -1) : periods[index].startKey;
+  }
+
+  const lastIndex = periods.length - 1;
+  const activeIndex = lastIndex >= 0 && !periods[lastIndex].endKey ? lastIndex : -1;
+  if (cycleEnabled) {
+    if (activeIndex >= 0) {
+      periods[activeIndex].anchorKey = cycleStartKey;
+      periods[activeIndex].templateIndex = cycleTemplateIndex;
+    } else {
+      periods.push({
+        startKey: cycleStartKey,
+        endKey: '',
+        anchorKey: cycleStartKey,
+        templateIndex: cycleTemplateIndex
+      });
+    }
+  } else if (activeIndex >= 0) {
+    const currentKey = todayKey();
+    if (periods[activeIndex].startKey > currentKey) periods.pop();
+    else periods[activeIndex].endKey = currentKey;
+  }
+  return periods.slice(-MAX_CYCLE_PERIODS);
+}
+
 function normalizeState(raw) {
   const defaults = createDefaultState();
   const source = objectOr(raw, {});
@@ -154,6 +200,12 @@ function normalizeState(raw) {
   state.time24 = source.time24 !== false;
   state.cycleEnabled = source.cycleEnabled === undefined ? defaults.cycleEnabled : source.cycleEnabled === true;
   state.cycleStartKey = isValidDateKey(source.cycleStartKey) ? source.cycleStartKey : defaults.cycleStartKey;
+  state.cyclePeriods = normalizeCyclePeriods(
+    source.cyclePeriods,
+    state.cycleEnabled,
+    state.cycleStartKey,
+    state.cycleTemplateIndex
+  );
   state.momentFrequencyIndex = Math.round(boundedNumber(source.momentFrequencyIndex, defaults.momentFrequencyIndex, 0, 3));
   state.momentToneIndex = Math.round(boundedNumber(source.momentToneIndex, defaults.momentToneIndex, 0, 2));
   state.momentHistory = normalizeMomentHistory(source.momentHistory);
@@ -186,7 +238,7 @@ function normalizeState(raw) {
     return teamAssignmentCount >= MAX_TEAM_ASSIGNMENTS;
   });
   state.teamClipboard = normalizeTeamClipboard(source.teamClipboard, memberIds, shiftKeys);
-  state.schemaVersion = 1;
+  state.schemaVersion = 2;
   return state;
 }
 
@@ -226,7 +278,7 @@ function resetState() {
 }
 
 function exportBackup(state) {
-  return JSON.stringify({ app: '班妥了', platform: 'wechat-miniprogram', schemaVersion: 1, exportedAt: new Date().toISOString(), data: normalizeState(state) }, null, 2);
+  return JSON.stringify({ app: '班妥了', platform: 'wechat-miniprogram', schemaVersion: 2, exportedAt: new Date().toISOString(), data: normalizeState(state) }, null, 2);
 }
 
 function importBackup(text) {
@@ -243,6 +295,7 @@ module.exports = {
   MAX_MEMBERS,
   MAX_PERSONAL_ASSIGNMENTS,
   MAX_TEAM_ASSIGNMENTS,
+  MAX_CYCLE_PERIODS,
   MAX_BACKUP_LENGTH,
   normalizeState,
   loadState,

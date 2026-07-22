@@ -22,6 +22,7 @@ global.wx = {
   openSetting() {},
   openPrivacyContract() {},
   requirePrivacyAuthorize(options) { if (options && options.success) options.success(); },
+  getAccountInfoSync() { return { miniProgram: { envVersion: 'develop', version: '' } }; },
   getLogManager() { return { debug() {}, info() {}, warn() {}, error() {} }; },
   getFileSystemManager() { return { writeFileSync() {} }; },
   env: { USER_DATA_PATH: '/tmp' }
@@ -38,6 +39,7 @@ const moment = require('../utils/moment');
 const store = require('../utils/store');
 const privacy = require('../utils/privacy');
 const navigation = require('../utils/navigation');
+const versionUtils = require('../utils/version');
 
 function test(name, fn) {
   try {
@@ -48,6 +50,17 @@ function test(name, fn) {
     process.exitCode = 1;
   }
 }
+
+test('关于页版本优先读取微信运行时并在开发环境安全回退', () => {
+  const originalGetAccountInfoSync = wx.getAccountInfoSync;
+  wx.getAccountInfoSync = () => ({ miniProgram: { envVersion: 'release', version: '1.2.3' } });
+  assert.strictEqual(versionUtils.getMiniProgramVersion(), '1.2.3');
+  wx.getAccountInfoSync = () => ({ miniProgram: { envVersion: 'develop', version: '9.9.9' } });
+  assert.strictEqual(versionUtils.getMiniProgramVersion(), versionUtils.FALLBACK_VERSION);
+  wx.getAccountInfoSync = () => { throw new Error('unsupported'); };
+  assert.strictEqual(versionUtils.getMiniProgramVersion(), versionUtils.FALLBACK_VERSION);
+  wx.getAccountInfoSync = originalGetAccountInfoSync;
+});
 
 test('跨午夜工时会落到次日并扣除休息', () => {
   assert.strictEqual(schedule.calculateDuration(1200, 480, 60, true), 660);
@@ -62,7 +75,7 @@ test('循环模板支持负日期偏移和单日覆盖', () => {
   assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-01'), 'day');
   assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-03'), 'night');
   assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-05'), 'rest');
-  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-06-30'), 'rest');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-06-30'), 'none');
   state.assignments['2026-07-03'] = 'morning';
   assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-03'), 'morning');
 });
@@ -90,12 +103,90 @@ test('个人月度统计与班次分布保持一致', () => {
   const state = defaults.createDefaultState();
   state.cycleEnabled = true;
   state.cycleStartKey = '2026-07-01';
-  const stats = schedule.calculateMonthStatistics(state, 2026, 6);
-  const counts = schedule.calculateMonthShiftCounts(state, 2026, 6);
+  const completedMonth = new Date(2026, 7, 1, 12);
+  const stats = schedule.calculateMonthStatistics(state, 2026, 6, completedMonth);
+  const counts = schedule.calculateMonthShiftCounts(state, 2026, 6, completedMonth);
   const totalDays = counts.reduce((sum, item) => sum + item.count, 0);
   assert.strictEqual(totalDays, 31);
   assert.strictEqual(stats.workDays + stats.restDays, 31);
   assert(stats.totalMinutes > 0);
+});
+
+test('循环只从启用日起生效且未来日期暂不进入统计', () => {
+  const state = defaults.createDefaultState();
+  state.cycleEnabled = true;
+  state.cycleStartKey = '2026-07-21';
+  const throughToday = new Date(2026, 6, 22, 12);
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-20'), 'none');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-21'), 'day');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-23'), 'night');
+  const stats = schedule.calculateMonthStatistics(state, 2026, 6, throughToday);
+  const counts = schedule.calculateMonthShiftCounts(state, 2026, 6, throughToday);
+  assert.strictEqual(stats.workDays, 2);
+  assert.strictEqual(counts.reduce((sum, item) => sum + item.count, 0), 2);
+});
+
+test('循环关闭后会封存历史，重新开启会建立新的循环区间', () => {
+  const state = defaults.createDefaultState();
+  schedule.enableCycle(state, '2026-07-01');
+  schedule.disableCycle(state, '2026-07-05');
+  for (let day = 5; day <= 10; day += 1) {
+    state.assignments[`2026-07-${dateUtils.pad(day)}`] = 'morning';
+  }
+  state.cycleTemplateIndex = 1;
+  schedule.enableCycle(state, '2026-07-10');
+
+  assert.deepStrictEqual(state.cyclePeriods, [
+    { startKey: '2026-07-01', endKey: '2026-07-05', anchorKey: '2026-07-01', templateIndex: 0 },
+    { startKey: '2026-07-10', endKey: '', anchorKey: '2026-07-10', templateIndex: 1 }
+  ]);
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-03'), 'night');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-05'), 'morning');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-08'), 'morning');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-10'), 'morning');
+
+  delete state.assignments['2026-07-05'];
+  delete state.assignments['2026-07-10'];
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-05'), 'rest');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-06'), 'morning');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-09'), 'morning');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-10'), 'morning');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-12'), 'evening');
+
+  const stats = schedule.calculateMonthStatistics(state, 2026, 6, new Date(2026, 6, 12, 12));
+  assert.strictEqual(stats.workDays, 11);
+  assert.strictEqual(stats.restDays, 1);
+});
+
+test('修改正在使用的循环设置只影响当天及以后', () => {
+  const state = defaults.createDefaultState();
+  schedule.enableCycle(state, '2026-07-01');
+  schedule.changeCycleTemplate(state, 1, '2026-07-04');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-03'), 'night');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-04'), 'evening');
+
+  schedule.changeCycleStart(state, '2026-07-10', '2026-07-06');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-04'), 'evening');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-06'), 'none');
+  assert.strictEqual(schedule.getPersonalShiftKey(state, '2026-07-10'), 'morning');
+  assert.deepStrictEqual(state.cyclePeriods.map((period) => period.endKey), ['2026-07-03', '2026-07-05', '']);
+});
+
+test('修改历史或当天班次会立即改变统计结果', () => {
+  const state = defaults.createDefaultState();
+  state.cycleEnabled = true;
+  state.cycleStartKey = '2026-07-22';
+  const now = new Date(2026, 6, 22, 12);
+  let stats = schedule.calculateMonthStatistics(state, 2026, 6, now);
+  assert.strictEqual(stats.workDays, 1);
+  state.assignments['2026-07-21'] = 'night';
+  stats = schedule.calculateMonthStatistics(state, 2026, 6, now);
+  assert.strictEqual(stats.workDays, 2);
+  assert.strictEqual(stats.nightDays, 1);
+  state.assignments['2026-07-22'] = 'rest';
+  stats = schedule.calculateMonthStatistics(state, 2026, 6, now);
+  assert.strictEqual(stats.workDays, 1);
+  assert.strictEqual(stats.restDays, 1);
 });
 
 test('团队排班按成员和日期组成复合键', () => {
@@ -103,11 +194,13 @@ test('团队排班按成员和日期组成复合键', () => {
   state.teamMembers.push({ id: 'nurse-a', name: '小林', role: '护士', color: '#2388CF', isSelf: false });
   state.teamAssignments[schedule.teamAssignmentKey('2026-07-21', 'self')] = 'day';
   state.teamAssignments[schedule.teamAssignmentKey('2026-07-21', 'nurse-a')] = 'night';
+  state.teamAssignments[schedule.teamAssignmentKey('2026-07-22', 'self')] = 'day';
   assert.strictEqual(schedule.teamCountForDate(state, '2026-07-21'), 2);
-  const stats = schedule.calculateTeamMonthStatistics(state, 2026, 6);
+  const stats = schedule.calculateTeamMonthStatistics(state, 2026, 6, new Date(2026, 6, 21, 12));
   assert.strictEqual(stats.workAssignments, 2);
   assert.strictEqual(stats.nightAssignments, 1);
   assert.strictEqual(stats.dailyCounts['2026-07-21'], 2);
+  assert.strictEqual(stats.dailyCounts['2026-07-22'], undefined);
   assert.strictEqual(stats.members.find((item) => item.member.id === 'nurse-a').nightDays, 1);
 });
 
@@ -238,10 +331,29 @@ test('自定义 tabBar 会按真实路由切换并保留切换中的最后一次
 test('备份可以完整导出和恢复', () => {
   const state = defaults.createDefaultState();
   state.assignments['2026-07-21'] = 'night';
+  schedule.enableCycle(state, '2026-07-01');
+  schedule.disableCycle(state, '2026-07-05');
+  schedule.enableCycle(state, '2026-07-10');
   const backup = store.exportBackup(state);
   const restored = store.importBackup(backup);
   assert.strictEqual(restored.assignments['2026-07-21'], 'night');
   assert.strictEqual(restored.shifts.length, state.shifts.length);
+  assert.strictEqual(JSON.parse(backup).schemaVersion, 2);
+  assert.deepStrictEqual(restored.cyclePeriods, state.cyclePeriods);
+  assert.strictEqual(schedule.getPersonalShiftKey(restored, '2026-07-03'), 'night');
+});
+
+test('旧版单循环数据会自动迁移为当前活动区间', () => {
+  const legacy = defaults.createDefaultState();
+  legacy.schemaVersion = 1;
+  legacy.cycleEnabled = true;
+  legacy.cycleStartKey = '2026-07-01';
+  delete legacy.cyclePeriods;
+  const restored = store.normalizeState(legacy);
+  assert.strictEqual(restored.schemaVersion, 2);
+  assert.deepStrictEqual(restored.cyclePeriods, [
+    { startKey: '2026-07-01', endKey: '', anchorKey: '2026-07-01', templateIndex: 0 }
+  ]);
 });
 
 test('隐私授权守卫只在微信授权成功后继续敏感操作', () => {
@@ -435,6 +547,25 @@ test('休息时长覆盖整个班次时不会保存无效班次', () => {
   assert.strictEqual(toastTitle, '休息时间不能等于或超过班次时长');
   assert.strictEqual(page.state.shifts.some((shift) => shift.key === 'custom_invalid'), false);
   wx.showToast = originalShowToast;
+});
+
+test('循环启停会使用当天建立并封存独立区间', () => {
+  const page = instantiatePage('../pages/settings/settings.js');
+  page.state = defaults.createDefaultState();
+  assert.strictEqual(page.state.cycleEnabled, false);
+  page.toggleCycle({ detail: { value: true } });
+  assert.strictEqual(page.state.cycleEnabled, true);
+  assert.strictEqual(page.state.cycleStartKey, dateUtils.todayKey());
+  assert.deepStrictEqual(page.state.cyclePeriods, [
+    { startKey: dateUtils.todayKey(), endKey: '', anchorKey: dateUtils.todayKey(), templateIndex: 0 }
+  ]);
+  page.toggleCycle({ detail: { value: false } });
+  assert.strictEqual(page.state.cycleEnabled, false);
+  assert.strictEqual(page.state.cyclePeriods[0].endKey, dateUtils.todayKey());
+  page.toggleCycle({ detail: { value: true } });
+  assert.strictEqual(page.state.cyclePeriods.length, 2);
+  assert.strictEqual(page.state.cyclePeriods[1].endKey, '');
+  store.resetState();
 });
 
 test('成员与班次数量达到上限时不会继续打开新增表单', () => {
@@ -642,8 +773,16 @@ test('排班、统计和设置页面可在最小小程序运行时完成首屏�
 
   const statisticsPage = instantiatePage('../pages/statistics/statistics.js');
   statisticsPage.onLoad();
+  statisticsPage.onShow();
   assert.strictEqual(statisticsPage.data.summaryCards.length, 4);
   assert.strictEqual(statisticsPage.data.showPeriodReset, false);
+  assert.strictEqual(statisticsPage.data.summaryCards.find((item) => item.label === '工作天数').value, 1);
+  const refreshedState = store.loadState(true);
+  refreshedState.assignments[indexPage.data.selectedDateKey] = 'rest';
+  store.saveState(refreshedState);
+  statisticsPage.onShow();
+  assert.strictEqual(statisticsPage.data.summaryCards.find((item) => item.label === '工作天数').value, 0);
+  assert.strictEqual(statisticsPage.data.summaryCards.find((item) => item.label === '休息').value, 1);
   statisticsPage.changePeriod({ currentTarget: { dataset: { delta: -1 } } });
   assert.strictEqual(statisticsPage.data.showPeriodReset, true);
   statisticsPage.goCurrent();
@@ -657,6 +796,7 @@ test('排班、统计和设置页面可在最小小程序运行时完成首屏�
 
   const settingsPage = instantiatePage('../pages/settings/settings.js');
   settingsPage.onLoad({ panel: 'theme' });
+  assert.strictEqual(settingsPage.data.appVersion, versionUtils.FALLBACK_VERSION);
   assert.strictEqual(settingsPage.data.themeCards.length, 8);
   assert.strictEqual(settingsPage.data.panel, 'theme');
   global.setTimeout = originalSetTimeout;

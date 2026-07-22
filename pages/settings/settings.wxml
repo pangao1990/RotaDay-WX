@@ -149,9 +149,10 @@
             </view>
 
             <view wx:if="{{shiftTab === 'cycle'}}">
-              <view class="setting-control-row"><view><text>启用循环班表</text><text class="small">单日修改仍会优先于循环</text></view><switch checked="{{cycleEnabled}}" color="{{theme.brand}}" bindchange="toggleCycle" /></view>
+              <view class="setting-control-row"><view><text>启用循环班表</text><text class="small">历史循环会保留，单日修改仍优先</text></view><switch checked="{{cycleEnabled}}" color="{{theme.brand}}" bindchange="toggleCycle" /></view>
               <text class="section-label">循环起始日</text>
               <picker mode="date" value="{{cycleStartKey}}" bindchange="changeCycleStart"><view class="form-picker">{{cycleStartKey}}</view></picker>
+              <text class="form-hint">调整循环设置只影响今天及以后，过去的排班和统计保持不变</text>
               <text class="section-label">循环模板</text>
               <view class="cycle-list">
                 <button wx:for="{{cycleTemplates}}" wx:key="key" class="cycle-card {{item.selected ? 'selected' : ''}}" data-index="{{item.index}}" bindtap="chooseCycleTemplate">
@@ -186,7 +187,7 @@
               <image src="/assets/logo.png" mode="aspectFit" />
               <text class="about-name">班妥了</text>
               <text class="about-slogan">智能倒班排班助手</text>
-              <text class="about-version">微信小程序版 1.0.0</text>
+              <text class="about-version">微信小程序版 {{appVersion}}</text>
             </view>
             <view class="intro-card"><text>排班不纠结，班妥了就行。</text></view>
             <view class="about-description">

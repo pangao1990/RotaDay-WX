@@ -5,6 +5,7 @@ const dateUtils = require('../../utils/date');
 const privacy = require('../../utils/privacy');
 const logger = require('../../utils/logger');
 const navigation = require('../../utils/navigation');
+const versionUtils = require('../../utils/version');
 const {
   THEMES,
   CYCLE_TEMPLATES,
@@ -45,6 +46,7 @@ Page({
     themeVars: '',
     panel: '',
     panelTitle: '',
+    appVersion: '',
     appMode: 'personal',
     themeIndex: 0,
     themeCards: [],
@@ -145,6 +147,7 @@ Page({
     this.setData({
       theme,
       themeVars: themeUtils.themeVars(theme),
+      appVersion: versionUtils.getMiniProgramVersion(),
       appMode: this.state.appMode,
       themeIndex: Number(this.state.themeIndex) || 0,
       themeCards,
@@ -257,19 +260,21 @@ Page({
   },
 
   toggleCycle(event) {
-    this.state.cycleEnabled = !!event.detail.value;
+    const enabled = !!event.detail.value;
+    if (enabled && !this.state.cycleEnabled) schedule.enableCycle(this.state, dateUtils.todayKey());
+    else if (!enabled && this.state.cycleEnabled) schedule.disableCycle(this.state, dateUtils.todayKey());
     store.saveState(this.state);
     this.refreshPage();
   },
 
   chooseCycleTemplate(event) {
-    this.state.cycleTemplateIndex = Number(event.currentTarget.dataset.index);
+    schedule.changeCycleTemplate(this.state, Number(event.currentTarget.dataset.index), dateUtils.todayKey());
     store.saveState(this.state);
     this.refreshPage();
   },
 
   changeCycleStart(event) {
-    this.state.cycleStartKey = event.detail.value;
+    schedule.changeCycleStart(this.state, event.detail.value, dateUtils.todayKey());
     store.saveState(this.state);
     this.refreshPage();
   },

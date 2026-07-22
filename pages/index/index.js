@@ -316,11 +316,12 @@ Page({
   },
 
   restoreCycle() {
+    const restoresCycle = !!schedule.cyclePeriodForDate(this.state, this.data.selectedDateKey);
     delete this.state.assignments[this.data.selectedDateKey];
     store.saveState(this.state);
     this.updateModalState({ showShiftEditor: false });
     this.refreshPage();
-    wx.showToast({ title: this.state.cycleEnabled ? '已恢复循环' : '已清除当天覆盖', icon: 'success' });
+    wx.showToast({ title: restoresCycle ? '已恢复循环' : '已清除当天覆盖', icon: 'success' });
   },
 
   openTeamManager() {

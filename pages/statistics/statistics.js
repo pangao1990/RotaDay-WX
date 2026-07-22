@@ -123,7 +123,7 @@ Page({
         hours: hoursText(item.totalMinutes),
         width: `${Math.max(item.totalMinutes ? 5 : 0, Math.round(item.totalMinutes / maxMinutes * 100))}%`
       }));
-      const dayCount = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
+      const dayCount = schedule.monthDayLimit(this.viewYear, this.viewMonth);
       const counts = [];
       for (let day = 1; day <= dayCount; day += 1) {
         const dateKey = dateUtils.formatDateKey(this.viewYear, this.viewMonth, day);

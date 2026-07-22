@@ -76,6 +76,10 @@ files.filter((file) => file.endsWith('.wxss')).forEach((file) => {
 });
 
 const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
+const packageConfig = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const versionModule = require(path.join(root, 'utils/version'));
+if (!/^\d+\.\d+\.\d+$/.test(packageConfig.version || '')) fail('package.json 必须使用标准三段式版本号');
+if (versionModule.FALLBACK_VERSION !== packageConfig.version) fail('开发环境回退版本必须与 package.json 保持一致');
 if (!appConfig.window || appConfig.window.navigationStyle !== 'default') {
   fail('app.json 必须使用微信原生导航栏，由系统为右上角胶囊和安全区留位');
 }
@@ -138,6 +142,9 @@ if (momentModule) {
 
 const defaultState = require(path.join(root, 'utils/defaults')).createDefaultState();
 if (defaultState.cycleEnabled !== false) fail('个人版首次使用必须保持空班表，不得默认生成循环排班统计');
+if (defaultState.schemaVersion !== 2 || !Array.isArray(defaultState.cyclePeriods) || defaultState.cyclePeriods.length) {
+  fail('循环历史必须使用第二版数据结构，且首次使用不得预置历史区间');
+}
 
 files.filter((file) => file.endsWith('.json')).forEach((file) => {
   const config = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -176,6 +183,9 @@ if (settingsWxml.includes('隐私保护指引') || settingsWxml.includes('openPr
 if (!settingsWxml.includes('class="setting-control-row no-border"')) fail('日历显示面板不应保留多余分隔线');
 if (!settingsWxml.includes('src="/assets/logo.png"') || settingsWxml.includes('webp="{{true}}"')) {
   fail('关于页 Logo 必须使用真机兼容的本地 PNG 资源');
+}
+if (!settingsWxml.includes('微信小程序版 {{appVersion}}') || /微信小程序版\s+\d+\.\d+\.\d+/.test(settingsWxml)) {
+  fail('关于页版本号必须绑定微信运行时版本，不得写死在 WXML 中');
 }
 if (settingsWxml.includes('个人与团队排班、统计、主题和数据备份永久免费、无广告、无需登录。')) {
   fail('关于页不得保留已要求删除的免费与广告说明');
@@ -217,6 +227,9 @@ if (!customModalTags.length || customModalTags.some((tag) => !tag.includes('enha
 
 const settingsWxss = fs.readFileSync(path.join(root, 'pages/settings/settings.wxss'), 'utf8');
 const settingsJs = fs.readFileSync(path.join(root, 'pages/settings/settings.js'), 'utf8');
+if (!settingsJs.includes("require('../../utils/version')") || !settingsJs.includes('getMiniProgramVersion()')) {
+  fail('设置页必须通过统一版本工具动态读取微信小程序版本');
+}
 if (!/\.segmented button\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;/s.test(settingsWxss)) {
   fail('设置页分段按钮文字必须水平、垂直居中');
 }

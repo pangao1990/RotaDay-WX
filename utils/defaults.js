@@ -45,7 +45,7 @@ function clone(value) {
 
 function createDefaultState() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     appMode: 'personal',
     themeIndex: 0,
     customThemeBrand: '#2F73C9',
@@ -56,6 +56,7 @@ function createDefaultState() {
     cycleEnabled: false,
     cycleTemplateIndex: 0,
     cycleStartKey: firstDayKey(),
+    cyclePeriods: [],
     shifts: clone(DEFAULT_SHIFTS),
     teamMembers: [{ id: 'self', name: '我', role: '负责人', color: '#368B78', isSelf: true }],
     teamAssignments: {},
